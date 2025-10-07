@@ -50,6 +50,11 @@ export default function Index() {
   });
   const [loginUsername, setLoginUsername] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
+  const [activeLesson, setActiveLesson] = useState<{courseId: number; lessonNum: number} | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [showResult, setShowResult] = useState(false);
+  const [lessonScore, setLessonScore] = useState(0);
 
   useEffect(() => {
     const mockCourses: Course[] = [
@@ -105,6 +110,59 @@ export default function Index() {
   };
 
   const progressPercentage = (userProgress.completedLessons / userProgress.totalLessons) * 100;
+
+  const getLessonQuestions = (courseId: number, lessonNum: number) => {
+    const questions = {
+      1: [
+        { q: 'Сколько будет 5 + 3?', a: ['6', '8', '9', '7'], correct: 1 },
+        { q: 'Что больше: 10 или 15?', a: ['10', '15', 'Равны', 'Не знаю'], correct: 1 },
+        { q: 'Сколько будет 12 - 4?', a: ['6', '7', '8', '9'], correct: 2 }
+      ],
+      2: [
+        { q: 'Найди существительное', a: ['Бежать', 'Дом', 'Красный', 'Быстро'], correct: 1 },
+        { q: 'Сколько букв в слове "ШКОЛА"?', a: ['4', '5', '6', '7'], correct: 1 },
+        { q: 'Какая буква первая в алфавите?', a: ['Б', 'А', 'В', 'Г'], correct: 1 }
+      ],
+      3: [
+        { q: 'How do you say "Привет" in English?', a: ['Goodbye', 'Hello', 'Thank you', 'Please'], correct: 1 },
+        { q: 'What color is the sky?', a: ['Red', 'Blue', 'Green', 'Yellow'], correct: 1 },
+        { q: 'How many letters in "CAT"?', a: ['2', '3', '4', '5'], correct: 1 }
+      ],
+      4: [
+        { q: 'Какое животное самое большое?', a: ['Слон', 'Кит', 'Жираф', 'Лев'], correct: 1 },
+        { q: 'Сколько ног у паука?', a: ['6', '8', '10', '4'], correct: 1 },
+        { q: 'Что растет из семечка?', a: ['Камень', 'Растение', 'Вода', 'Воздух'], correct: 1 }
+      ]
+    };
+    return questions[courseId as keyof typeof questions] || questions[1];
+  };
+
+  const handleAnswerSelect = (answerIndex: number) => {
+    setSelectedAnswer(answerIndex);
+    setShowResult(true);
+    
+    const questions = getLessonQuestions(activeLesson!.courseId, activeLesson!.lessonNum);
+    if (answerIndex === questions[currentQuestion].correct) {
+      setLessonScore(lessonScore + 1);
+    }
+    
+    setTimeout(() => {
+      if (currentQuestion < questions.length - 1) {
+        setCurrentQuestion(currentQuestion + 1);
+        setSelectedAnswer(null);
+        setShowResult(false);
+      } else {
+        const earnedNasa = 50;
+        const earnedCredits = 5;
+        setUserProgress({
+          ...userProgress,
+          nasa: userProgress.nasa + earnedNasa,
+          credits: userProgress.credits + earnedCredits,
+          completedLessons: userProgress.completedLessons + 1
+        });
+      }
+    }, 1500);
+  };
 
   const renderNavigation = () => (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-200 shadow-sm">
@@ -333,17 +391,17 @@ export default function Index() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 mb-4">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                    <div onClick={() => setActiveLesson({courseId: course.id, lessonNum: 1})} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
                       <span className="font-medium">Урок 1: Введение</span>
                       <Badge className="bg-green-100 text-green-700">Завершено</Badge>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                    <div onClick={() => setActiveLesson({courseId: course.id, lessonNum: 2})} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
                       <span className="font-medium">Урок 2: Основы</span>
                       <Badge className="bg-blue-100 text-blue-700">В процессе</Badge>
                     </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
+                    <div onClick={() => setActiveLesson({courseId: course.id, lessonNum: 3})} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer">
                       <span className="font-medium">Урок 3: Практика</span>
-                      <Badge variant="secondary">Заблокировано</Badge>
+                      <Badge className="bg-yellow-100 text-yellow-700">Доступен</Badge>
                     </div>
                   </div>
                   <div className="flex items-center justify-between mb-3 p-2 bg-yellow-50 rounded-lg border border-yellow-200">
@@ -359,7 +417,7 @@ export default function Index() {
                       </div>
                     </div>
                   </div>
-                  <Button className="w-full" style={{ backgroundColor: course.color }}>
+                  <Button onClick={() => setActiveLesson({courseId: course.id, lessonNum: 2})} className="w-full" style={{ backgroundColor: course.color }}>
                     Продолжить обучение
                   </Button>
                 </CardContent>
@@ -387,7 +445,7 @@ export default function Index() {
                 <CardContent>
                   <div className="grid md:grid-cols-2 gap-4">
                     {[1, 2, 3, 4, 5, 6].map((lessonNum) => (
-                      <div key={lessonNum} className="p-4 bg-gray-50 rounded-xl hover:shadow-lg transition cursor-pointer">
+                      <div key={lessonNum} onClick={() => setActiveLesson({courseId: course.id, lessonNum})} className="p-4 bg-gray-50 rounded-xl hover:shadow-lg transition cursor-pointer">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-bold">Урок {lessonNum}</h4>
                           {lessonNum <= 2 ? (
@@ -739,6 +797,136 @@ export default function Index() {
       </Card>
     </div>
   );
+
+  if (activeLesson) {
+    const course = courses.find(c => c.id === activeLesson.courseId);
+    const questions = getLessonQuestions(activeLesson.courseId, activeLesson.lessonNum);
+    const currentQ = questions[currentQuestion];
+    const isLastQuestion = currentQuestion === questions.length - 1;
+    const isCompleted = showResult && isLastQuestion && selectedAnswer === currentQ.correct;
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-cyan-50">
+        {renderNavigation()}
+        
+        <div className="container mx-auto px-4 py-12 max-w-3xl">
+          <Button 
+            onClick={() => {
+              setActiveLesson(null);
+              setCurrentQuestion(0);
+              setSelectedAnswer(null);
+              setShowResult(false);
+              setLessonScore(0);
+            }}
+            variant="outline"
+            className="mb-6"
+          >
+            <Icon name="ArrowLeft" className="mr-2" size={18} />
+            Назад к курсам
+          </Button>
+
+          <Card className="border-2 shadow-xl" style={{ borderColor: course?.color + '40' }}>
+            <CardHeader>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                    style={{ backgroundColor: course?.color + '20' }}
+                  >
+                    <Icon name={course?.icon as any} size={32} style={{ color: course?.color }} />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl">{course?.title}</CardTitle>
+                    <CardDescription>Урок {activeLesson.lessonNum}</CardDescription>
+                  </div>
+                </div>
+                <Badge className="bg-blue-100 text-blue-700">
+                  Вопрос {currentQuestion + 1}/{questions.length}
+                </Badge>
+              </div>
+              <Progress value={((currentQuestion + 1) / questions.length) * 100} className="h-2" />
+            </CardHeader>
+            
+            <CardContent>
+              {!isCompleted ? (
+                <>
+                  <h3 className="text-2xl font-bold mb-6 text-center">{currentQ.q}</h3>
+                  
+                  <div className="grid gap-4">
+                    {currentQ.a.map((answer, index) => (
+                      <button
+                        key={index}
+                        onClick={() => !showResult && handleAnswerSelect(index)}
+                        disabled={showResult}
+                        className={`p-4 rounded-xl border-2 text-left font-medium transition-all ${
+                          showResult
+                            ? index === currentQ.correct
+                              ? 'bg-green-100 border-green-500 text-green-700'
+                              : index === selectedAnswer
+                              ? 'bg-red-100 border-red-500 text-red-700'
+                              : 'bg-gray-100 border-gray-300 text-gray-500'
+                            : 'bg-white border-gray-300 hover:border-primary hover:bg-primary/5'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-white border-2 flex items-center justify-center text-sm font-bold">
+                            {String.fromCharCode(65 + index)}
+                          </div>
+                          <span>{answer}</span>
+                          {showResult && index === currentQ.correct && (
+                            <Icon name="CheckCircle" className="ml-auto text-green-600" size={24} />
+                          )}
+                          {showResult && index === selectedAnswer && index !== currentQ.correct && (
+                            <Icon name="XCircle" className="ml-auto text-red-600" size={24} />
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center mx-auto mb-6">
+                    <Icon name="Trophy" size={48} className="text-white" />
+                  </div>
+                  <h3 className="text-3xl font-bold mb-4">Урок завершен! 🎉</h3>
+                  <p className="text-xl text-gray-600 mb-6">
+                    Правильных ответов: {lessonScore + 1}/{questions.length}
+                  </p>
+                  <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6 mb-6">
+                    <h4 className="font-bold text-lg mb-4">Награда получена:</h4>
+                    <div className="flex items-center justify-center gap-6">
+                      <div className="flex items-center gap-2">
+                        <Icon name="Coins" size={32} className="text-yellow-600" />
+                        <span className="text-2xl font-bold text-yellow-700">+50 НАСЫ</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Icon name="Star" size={32} className="text-blue-600" />
+                        <span className="text-2xl font-bold text-blue-700">+5 Кредитов</span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button 
+                    size="lg"
+                    onClick={() => {
+                      setActiveLesson(null);
+                      setCurrentQuestion(0);
+                      setSelectedAnswer(null);
+                      setShowResult(false);
+                      setLessonScore(0);
+                    }}
+                    className="bg-gradient-to-r from-primary to-secondary"
+                  >
+                    Вернуться к курсам
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   switch (currentPage) {
     case 'home':
