@@ -31,6 +31,8 @@ type UserProgress = {
   completedLessons: number;
   averageScore: number;
   streak: number;
+  nasa: number;
+  credits: number;
 };
 
 export default function Index() {
@@ -42,7 +44,9 @@ export default function Index() {
     totalLessons: 24,
     completedLessons: 8,
     averageScore: 78,
-    streak: 5
+    streak: 5,
+    nasa: 1250,
+    credits: 45
   });
   const [loginUsername, setLoginUsername] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
@@ -144,14 +148,27 @@ export default function Index() {
 
           <div>
             {currentUser ? (
-              <button onClick={() => setCurrentPage('profile')} className="flex items-center space-x-2 hover:opacity-80 transition">
-                <Avatar>
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-bold">
-                    {currentUser[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="hidden md:block font-medium">{currentUser}</span>
-              </button>
+              <div className="flex items-center gap-4">
+                <div className="hidden md:flex items-center gap-3">
+                  <div className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-full border border-yellow-300">
+                    <Icon name="Coins" size={16} className="text-yellow-600" />
+                    <span className="font-bold text-yellow-700">{userProgress.nasa}</span>
+                    <span className="text-xs text-yellow-600">НАСЫ</span>
+                  </div>
+                  <div className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-blue-100 to-blue-50 rounded-full border border-blue-300">
+                    <Icon name="Star" size={16} className="text-blue-600" />
+                    <span className="font-bold text-blue-700">{userProgress.credits}</span>
+                  </div>
+                </div>
+                <button onClick={() => setCurrentPage('profile')} className="flex items-center space-x-2 hover:opacity-80 transition">
+                  <Avatar>
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-bold">
+                      {currentUser[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:block font-medium">{currentUser}</span>
+                </button>
+              </div>
             ) : (
               <Button onClick={() => setCurrentPage('login')} className="bg-gradient-to-r from-primary to-secondary hover:opacity-90">
                 Войти
@@ -186,7 +203,17 @@ export default function Index() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-4 gap-6">
+              <div className="grid md:grid-cols-6 gap-4 mb-6">
+                <div className="text-center p-4 bg-gradient-to-br from-yellow-100 to-yellow-50 rounded-xl border-2 border-yellow-300">
+                  <Icon name="Coins" size={32} className="text-yellow-600 mx-auto mb-2" />
+                  <div className="text-3xl font-bold text-yellow-700">{userProgress.nasa}</div>
+                  <div className="text-sm text-gray-600 mt-1">НАСЫ 🚀</div>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-br from-blue-100 to-blue-50 rounded-xl border-2 border-blue-300">
+                  <Icon name="Star" size={32} className="text-blue-600 mx-auto mb-2" />
+                  <div className="text-3xl font-bold text-blue-700">{userProgress.credits}</div>
+                  <div className="text-sm text-gray-600 mt-1">Кредиты ⭐</div>
+                </div>
                 <div className="text-center p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl">
                   <div className="text-3xl font-bold text-primary">{userProgress.completedLessons}</div>
                   <div className="text-sm text-gray-600 mt-1">Уроков завершено</div>
@@ -204,6 +231,7 @@ export default function Index() {
                   <div className="text-sm text-gray-600 mt-1">Дней подряд</div>
                 </div>
               </div>
+
               <div className="mt-6">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium">Общий прогресс</span>
@@ -318,6 +346,19 @@ export default function Index() {
                       <Badge variant="secondary">Заблокировано</Badge>
                     </div>
                   </div>
+                  <div className="flex items-center justify-between mb-3 p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <span className="text-sm font-medium text-gray-700">Награда за урок:</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        <Icon name="Coins" size={14} className="text-yellow-600" />
+                        <span className="font-bold text-yellow-700">+50 НАСЫ</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Icon name="Star" size={14} className="text-blue-600" />
+                        <span className="font-bold text-blue-700">+5</span>
+                      </div>
+                    </div>
+                  </div>
                   <Button className="w-full" style={{ backgroundColor: course.color }}>
                     Продолжить обучение
                   </Button>
@@ -413,6 +454,19 @@ export default function Index() {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Icon name="PlayCircle" size={16} />
                     <span>{Math.floor(Math.random() * 20) + 5} игр</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mb-3 p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <span className="text-sm font-medium text-gray-700">Награда:</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <Icon name="Coins" size={14} className="text-yellow-600" />
+                      <span className="font-bold text-yellow-700">+100 НАСЫ</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Icon name="Star" size={14} className="text-blue-600" />
+                      <span className="font-bold text-blue-700">+10</span>
+                    </div>
                   </div>
                 </div>
                 <Button className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90">
