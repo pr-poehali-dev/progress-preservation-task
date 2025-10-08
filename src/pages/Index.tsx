@@ -55,6 +55,9 @@ export default function Index() {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [lessonScore, setLessonScore] = useState(0);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [canvasContext, setCanvasContext] = useState<CanvasRenderingContext2D | null>(null);
+  const [drawColor, setDrawColor] = useState('#000000');
 
   useEffect(() => {
     const savedUser = localStorage.getItem('nasaLearningUser');
@@ -155,9 +158,9 @@ export default function Index() {
         { q: 'Сколько будет 12 - 4?', a: ['6', '7', '8', '9'], correct: 2 }
       ],
       2: [
-        { q: 'Найди существительное', a: ['Бежать', 'Дом', 'Красный', 'Быстро'], correct: 1 },
-        { q: 'Сколько букв в слове "ШКОЛА"?', a: ['4', '5', '6', '7'], correct: 1 },
-        { q: 'Какая буква первая в алфавите?', a: ['Б', 'А', 'В', 'Г'], correct: 1 }
+        { q: 'Как правильно написать: к_р_ндаш?', a: ['корандаш', 'карандаш', 'коронадаш', 'карондаш'], correct: 1 },
+        { q: 'Как правильно: м_л_ко?', a: ['молоко', 'малако', 'мылако', 'милоко'], correct: 0 },
+        { q: 'Найди правильное написание: в_р_бей', a: ['варобей', 'воробей', 'виробей', 'вырабей'], correct: 1 }
       ],
       3: [
         { q: 'How do you say "Привет" in English?', a: ['Goodbye', 'Hello', 'Thank you', 'Please'], correct: 1 },
@@ -231,6 +234,12 @@ export default function Index() {
               className={`font-medium transition-colors ${currentPage === 'games' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
             >
               Игры
+            </button>
+            <button 
+              onClick={() => setCurrentPage('draw')}
+              className={`font-medium transition-colors ${currentPage === 'draw' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
+            >
+              🎨 Рисовать
             </button>
             <button 
               onClick={() => setCurrentPage('about')}
@@ -856,6 +865,112 @@ export default function Index() {
     </div>
   );
 
+  const renderDraw = () => {
+    const canvasRef = (canvas: HTMLCanvasElement | null) => {
+      if (canvas && !canvasContext) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.lineWidth = 3;
+          setCanvasContext(ctx);
+        }
+      }
+    };
+
+    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (!canvasContext) return;
+      setIsDrawing(true);
+      const rect = e.currentTarget.getBoundingClientRect();
+      canvasContext.beginPath();
+      canvasContext.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    };
+
+    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (!isDrawing || !canvasContext) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      canvasContext.strokeStyle = drawColor;
+      canvasContext.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      canvasContext.stroke();
+    };
+
+    const stopDrawing = () => {
+      setIsDrawing(false);
+    };
+
+    const clearCanvas = () => {
+      if (!canvasContext) return;
+      const canvas = canvasContext.canvas;
+      canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-orange-50 to-yellow-50">
+        {renderNavigation()}
+        
+        <div className="container mx-auto px-4 py-12 max-w-4xl">
+          <Card className="border-2 shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-3xl flex items-center gap-2">
+                <Icon name="Paintbrush" className="text-primary" />
+                Творческая мастерская 🎨
+              </CardTitle>
+              <CardDescription>Рисуй и развивай свою креативность!</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-3 items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Выбери цвет:</span>
+                  {['#000000', '#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#A8E6CF', '#FF8B94', '#C7CEEA'].map(color => (
+                    <button
+                      key={color}
+                      onClick={() => setDrawColor(color)}
+                      className={`w-10 h-10 rounded-full border-2 transition-transform hover:scale-110 ${
+                        drawColor === color ? 'border-gray-800 scale-110' : 'border-gray-300'
+                      }`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+                <Button onClick={clearCanvas} variant="outline">
+                  <Icon name="Trash2" className="mr-2" size={18} />
+                  Очистить
+                </Button>
+              </div>
+              
+              <div className="border-4 border-gray-300 rounded-xl overflow-hidden bg-white">
+                <canvas
+                  ref={canvasRef}
+                  width={800}
+                  height={600}
+                  className="w-full cursor-crosshair"
+                  onMouseDown={startDrawing}
+                  onMouseMove={draw}
+                  onMouseUp={stopDrawing}
+                  onMouseLeave={stopDrawing}
+                />
+              </div>
+              
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                <h4 className="font-bold mb-2 flex items-center gap-2">
+                  <Icon name="Lightbulb" className="text-yellow-600" />
+                  Идеи для рисования:
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {['🏠 Мой дом', '🌳 Природа', '🐱 Животные', '🚀 Космос', '🌈 Радуга', '⭐ Звёзды', '🎈 Праздник', '🎨 Абстракция'].map(idea => (
+                    <div key={idea} className="bg-white px-3 py-2 rounded-lg text-center text-sm font-medium">
+                      {idea}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
   if (activeLesson) {
     const course = courses.find(c => c.id === activeLesson.courseId);
     const questions = getLessonQuestions(activeLesson.courseId, activeLesson.lessonNum);
@@ -993,6 +1108,8 @@ export default function Index() {
       return renderCourses();
     case 'games':
       return renderGames();
+    case 'draw':
+      return renderDraw();
     case 'profile':
       return renderProfile();
     case 'about':
