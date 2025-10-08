@@ -278,6 +278,20 @@ export default function Index() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {renderNavigation()}
       
+      {currentUser && (
+        <div className="fixed top-20 right-4 z-40 flex items-center gap-3 animate-bounce-in">
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-full border-2 border-yellow-300 shadow-lg">
+            <Icon name="Coins" size={24} className="text-yellow-600" />
+            <span className="font-bold text-xl text-yellow-700">{userProgress.nasa}</span>
+            <span className="text-sm text-yellow-600 font-medium">НАСЫ</span>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-100 to-blue-50 rounded-full border-2 border-blue-300 shadow-lg">
+            <Icon name="Star" size={24} className="text-blue-600" />
+            <span className="font-bold text-xl text-blue-700">{userProgress.credits}</span>
+          </div>
+        </div>
+      )}
+      
       <div className="container mx-auto px-4 py-12">
         <div className="text-center mb-16 animate-fade-in">
           <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
