@@ -307,6 +307,7 @@ export default function Index() {
   const handleVoiceCommand = (command: string) => {
     const lowerCommand = command.toLowerCase();
     
+    // Навигация
     if (lowerCommand.includes('главная') || lowerCommand.includes('домой')) {
       setCurrentPage('home');
       setVoiceText('Открываю главную страницу');
@@ -327,9 +328,109 @@ export default function Index() {
       setVoiceText('Открываю профиль');
     } else if (lowerCommand.includes('сколько нас') || lowerCommand.includes('баланс')) {
       setVoiceText(`У тебя ${userProgress.nasa} НАСОВ и ${userProgress.credits} кредитов`);
-    } else {
-      setVoiceText('Извини, я не понял команду. Попробуй сказать: "Открой курсы" или "Сколько у меня НАСОВ?"');
     }
+    
+    // Математика
+    else if (lowerCommand.includes('сколько будет') || lowerCommand.includes('посчитай')) {
+      const mathResult = solveMath(lowerCommand);
+      setVoiceText(mathResult);
+    } else if (lowerCommand.includes('таблица умножения')) {
+      const match = lowerCommand.match(/(\d+)/);
+      if (match) {
+        const num = parseInt(match[0]);
+        setVoiceText(`Таблица умножения на ${num}: ${num}×1=${num}, ${num}×2=${num*2}, ${num}×3=${num*3}, ${num}×4=${num*4}, ${num}×5=${num*5}`);
+      } else {
+        setVoiceText('Скажи число, например: "Таблица умножения на 5"');
+      }
+    }
+    
+    // Русский язык
+    else if (lowerCommand.includes('как пишется')) {
+      if (lowerCommand.includes('карандаш')) {
+        setVoiceText('КАРАНДАШ пишется через А: К-А-Р-А-Н-Д-А-Ш');
+      } else if (lowerCommand.includes('молоко')) {
+        setVoiceText('МОЛОКО пишется через О: М-О-Л-О-К-О');
+      } else if (lowerCommand.includes('воробей')) {
+        setVoiceText('ВОРОБЕЙ пишется через О: В-О-Р-О-Б-Е-Й');
+      } else {
+        setVoiceText('Спроси про конкретное слово, например: "Как пишется карандаш?"');
+      }
+    } else if (lowerCommand.includes('что такое существительное')) {
+      setVoiceText('Существительное - это часть речи, которая обозначает предмет и отвечает на вопросы: кто? или что? Например: дом, кошка, дерево');
+    } else if (lowerCommand.includes('что такое глагол')) {
+      setVoiceText('Глагол - это часть речи, которая обозначает действие и отвечает на вопросы: что делать? что сделать? Например: бежать, прыгать, читать');
+    }
+    
+    // Английский язык
+    else if (lowerCommand.includes('как по-английски')) {
+      if (lowerCommand.includes('привет') || lowerCommand.includes('здравствуй')) {
+        setVoiceText('Привет по-английски - Hello (хэллоу)');
+      } else if (lowerCommand.includes('спасибо')) {
+        setVoiceText('Спасибо по-английски - Thank you (сэнк ю)');
+      } else if (lowerCommand.includes('кошка')) {
+        setVoiceText('Кошка по-английски - Cat (кэт)');
+      } else if (lowerCommand.includes('собака')) {
+        setVoiceText('Собака по-английски - Dog (дог)');
+      } else {
+        setVoiceText('Спроси про конкретное слово, например: "Как по-английски привет?"');
+      }
+    }
+    
+    // Окружающий мир
+    else if (lowerCommand.includes('сколько ног у')) {
+      if (lowerCommand.includes('паук')) {
+        setVoiceText('У паука 8 ног! Это арахнид, а не насекомое');
+      } else if (lowerCommand.includes('собак') || lowerCommand.includes('кошк')) {
+        setVoiceText('У собак и кошек по 4 лапы');
+      } else if (lowerCommand.includes('птиц')) {
+        setVoiceText('У птиц 2 ноги и 2 крыла');
+      }
+    } else if (lowerCommand.includes('самое большое животное')) {
+      setVoiceText('Самое большое животное на Земле - синий кит! Он может весить до 200 тонн');
+    } else if (lowerCommand.includes('планет')) {
+      setVoiceText('В солнечной системе 8 планет: Меркурий, Венера, Земля, Марс, Юпитер, Сатурн, Уран и Нептун');
+    }
+    
+    // Общие вопросы
+    else if (lowerCommand.includes('привет') || lowerCommand.includes('здравствуй')) {
+      setVoiceText(`Привет, ${currentUser}! Чем могу помочь? Могу решить примеры, рассказать правила или открыть нужный раздел!`);
+    } else if (lowerCommand.includes('помощь') || lowerCommand.includes('что ты умеешь')) {
+      setVoiceText('Я умею: решать примеры, рассказывать про словарные слова, переводить слова на английский, отвечать на вопросы об окружающем мире и открывать разделы сайта!');
+    } else if (lowerCommand.includes('молодец') || lowerCommand.includes('спасибо')) {
+      setVoiceText('Рад помочь! Учись с удовольствием! 🚀');
+    }
+    
+    else {
+      setVoiceText('Извини, я не понял. Попробуй спросить: "Сколько будет 5 плюс 3?", "Как пишется карандаш?" или "Открой курсы"');
+    }
+  };
+
+  const solveMath = (command: string): string => {
+    const plusMatch = command.match(/(\d+)\s*(плюс|\+)\s*(\d+)/);
+    const minusMatch = command.match(/(\d+)\s*(минус|-)\s*(\d+)/);
+    const multMatch = command.match(/(\d+)\s*(умножить|раз|\*|×)\s*(\d+)/);
+    const divMatch = command.match(/(\d+)\s*(разделить|делить|\/|:)\s*(\d+)/);
+    
+    if (plusMatch) {
+      const a = parseInt(plusMatch[1]);
+      const b = parseInt(plusMatch[3]);
+      return `${a} плюс ${b} равно ${a + b}`;
+    } else if (minusMatch) {
+      const a = parseInt(minusMatch[1]);
+      const b = parseInt(minusMatch[3]);
+      return `${a} минус ${b} равно ${a - b}`;
+    } else if (multMatch) {
+      const a = parseInt(multMatch[1]);
+      const b = parseInt(multMatch[3]);
+      return `${a} умножить на ${b} равно ${a * b}`;
+    } else if (divMatch) {
+      const a = parseInt(divMatch[1]);
+      const b = parseInt(divMatch[3]);
+      if (b === 0) return 'На ноль делить нельзя!';
+      return `${a} разделить на ${b} равно ${a / b}`;
+    }
+    
+    return 'Не могу посчитать. Скажи например: "Сколько будет 5 плюс 3?"';
   };
 
   const startVoiceRecognition = () => {
@@ -369,14 +470,16 @@ export default function Index() {
 
   const renderVoiceAssistant = () => (
     <div 
-      className={`fixed bottom-6 right-6 z-50 transition-all ${showVoiceAssistant ? 'scale-100' : 'scale-0'}`}
+      className={`fixed bottom-6 left-6 z-50 transition-all ${showVoiceAssistant ? 'scale-100' : 'scale-0'}`}
     >
-      <Card className="w-80 border-2 border-primary shadow-2xl">
-        <CardHeader className="pb-3">
+      <Card className="w-96 border-2 border-primary shadow-2xl">
+        <CardHeader className="pb-3 bg-gradient-to-r from-primary/10 to-secondary/10">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center gap-2">
-              <Icon name="Mic" className="text-primary" />
-              Голосовой помощник
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+                <Icon name="Bot" className="text-white" size={20} />
+              </div>
+              Умный помощник
             </CardTitle>
             <button 
               onClick={() => setShowVoiceAssistant(false)}
@@ -387,26 +490,33 @@ export default function Index() {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="bg-blue-50 p-3 rounded-lg min-h-[60px]">
-            <p className="text-sm text-gray-700">{voiceText || 'Нажми на микрофон и скажи команду'}</p>
+          <div className="bg-blue-50 p-4 rounded-lg min-h-[80px] border-2 border-blue-200">
+            <p className="text-sm text-gray-700 leading-relaxed">{voiceText || '👋 Привет! Я твой помощник по учёбе. Могу решать примеры, рассказывать правила и отвечать на вопросы!'}</p>
           </div>
           
           <Button 
             onClick={startVoiceRecognition}
             disabled={isListening}
-            className={`w-full ${isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-gradient-to-r from-primary to-secondary'}`}
+            className={`w-full ${isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-gradient-to-r from-primary to-secondary'}`}
             size="lg"
           >
             <Icon name="Mic" className="mr-2" size={20} />
-            {isListening ? 'Слушаю...' : 'Начать говорить'}
+            {isListening ? '🎤 Слушаю...' : 'Начать говорить'}
           </Button>
           
-          <div className="text-xs text-gray-600 space-y-1">
-            <p className="font-bold">Примеры команд:</p>
-            <p>• "Открой курсы"</p>
-            <p>• "Открой рисование"</p>
-            <p>• "Сколько у меня НАСОВ?"</p>
-            <p>• "Открой профиль"</p>
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg border border-purple-200">
+            <p className="font-bold text-sm mb-2 flex items-center gap-2">
+              <Icon name="Sparkles" className="text-purple-600" size={16} />
+              Что я умею:
+            </p>
+            <div className="text-xs text-gray-700 space-y-1.5">
+              <p>📐 <strong>Математика:</strong> "Сколько будет 25 плюс 17?"</p>
+              <p>✏️ <strong>Русский:</strong> "Как пишется карандаш?"</p>
+              <p>🌍 <strong>Английский:</strong> "Как по-английски привет?"</p>
+              <p>🦋 <strong>Окружающий мир:</strong> "Сколько ног у паука?"</p>
+              <p>🎯 <strong>Навигация:</strong> "Открой курсы"</p>
+              <p>💰 <strong>Баланс:</strong> "Сколько у меня НАСОВ?"</p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -1441,9 +1551,10 @@ export default function Index() {
           {renderVoiceAssistant()}
           <button
             onClick={() => setShowVoiceAssistant(!showVoiceAssistant)}
-            className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform"
+            className="fixed bottom-6 left-6 z-50 w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform"
+            title="Голосовой помощник"
           >
-            <Icon name="Mic" className="text-white" size={28} />
+            <Icon name="Bot" className="text-white" size={28} />
           </button>
         </>
       )}
