@@ -58,8 +58,12 @@ export default function Index() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [canvasContext, setCanvasContext] = useState<CanvasRenderingContext2D | null>(null);
   const [drawColor, setDrawColor] = useState('#000000');
+  const [lineWidth, setLineWidth] = useState(3);
   const [savedDrawings, setSavedDrawings] = useState<string[]>([]);
   const [showSaveNotification, setShowSaveNotification] = useState(false);
+  const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceText, setVoiceText] = useState('');
 
   useEffect(() => {
     const savedUser = localStorage.getItem('nasaLearningUser');
@@ -298,6 +302,115 @@ export default function Index() {
         </div>
       </div>
     </nav>
+  );
+
+  const handleVoiceCommand = (command: string) => {
+    const lowerCommand = command.toLowerCase();
+    
+    if (lowerCommand.includes('главная') || lowerCommand.includes('домой')) {
+      setCurrentPage('home');
+      setVoiceText('Открываю главную страницу');
+    } else if (lowerCommand.includes('курс')) {
+      setCurrentPage('courses');
+      setVoiceText('Открываю курсы');
+    } else if (lowerCommand.includes('игр')) {
+      setCurrentPage('games');
+      setVoiceText('Открываю игры');
+    } else if (lowerCommand.includes('рисов') || lowerCommand.includes('рисунок')) {
+      setCurrentPage('draw');
+      setVoiceText('Открываю творческую мастерскую');
+    } else if (lowerCommand.includes('урок рисов')) {
+      setCurrentPage('draw-lesson');
+      setVoiceText('Открываю уроки рисования');
+    } else if (lowerCommand.includes('профиль')) {
+      setCurrentPage('profile');
+      setVoiceText('Открываю профиль');
+    } else if (lowerCommand.includes('сколько нас') || lowerCommand.includes('баланс')) {
+      setVoiceText(`У тебя ${userProgress.nasa} НАСОВ и ${userProgress.credits} кредитов`);
+    } else {
+      setVoiceText('Извини, я не понял команду. Попробуй сказать: "Открой курсы" или "Сколько у меня НАСОВ?"');
+    }
+  };
+
+  const startVoiceRecognition = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      setVoiceText('Голосовой помощник не поддерживается в этом браузере');
+      return;
+    }
+
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ru-RU';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setVoiceText('Слушаю...');
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setVoiceText(`Вы сказали: "${transcript}"`);
+      setTimeout(() => handleVoiceCommand(transcript), 1000);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      setVoiceText('Ошибка распознавания. Попробуй ещё раз');
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
+  const renderVoiceAssistant = () => (
+    <div 
+      className={`fixed bottom-6 right-6 z-50 transition-all ${showVoiceAssistant ? 'scale-100' : 'scale-0'}`}
+    >
+      <Card className="w-80 border-2 border-primary shadow-2xl">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Icon name="Mic" className="text-primary" />
+              Голосовой помощник
+            </CardTitle>
+            <button 
+              onClick={() => setShowVoiceAssistant(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <Icon name="X" size={20} />
+            </button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="bg-blue-50 p-3 rounded-lg min-h-[60px]">
+            <p className="text-sm text-gray-700">{voiceText || 'Нажми на микрофон и скажи команду'}</p>
+          </div>
+          
+          <Button 
+            onClick={startVoiceRecognition}
+            disabled={isListening}
+            className={`w-full ${isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-gradient-to-r from-primary to-secondary'}`}
+            size="lg"
+          >
+            <Icon name="Mic" className="mr-2" size={20} />
+            {isListening ? 'Слушаю...' : 'Начать говорить'}
+          </Button>
+          
+          <div className="text-xs text-gray-600 space-y-1">
+            <p className="font-bold">Примеры команд:</p>
+            <p>• "Открой курсы"</p>
+            <p>• "Открой рисование"</p>
+            <p>• "Сколько у меня НАСОВ?"</p>
+            <p>• "Открой профиль"</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 
   const renderHome = () => (
@@ -889,30 +1002,49 @@ export default function Index() {
         if (ctx) {
           ctx.lineCap = 'round';
           ctx.lineJoin = 'round';
-          ctx.lineWidth = 3;
+          ctx.lineWidth = lineWidth;
           setCanvasContext(ctx);
         }
       }
     };
 
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!canvasContext) return;
-      setIsDrawing(true);
+    const getCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();
-      canvasContext.beginPath();
-      canvasContext.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+      if ('touches' in e) {
+        return {
+          x: e.touches[0].clientX - rect.left,
+          y: e.touches[0].clientY - rect.top
+        };
+      }
+      return {
+        x: (e as React.MouseEvent).clientX - rect.left,
+        y: (e as React.MouseEvent).clientY - rect.top
+      };
     };
 
-    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+      if (!canvasContext) return;
+      e.preventDefault();
+      setIsDrawing(true);
+      const { x, y } = getCoordinates(e);
+      canvasContext.beginPath();
+      canvasContext.moveTo(x, y);
+    };
+
+    const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
       if (!isDrawing || !canvasContext) return;
-      const rect = e.currentTarget.getBoundingClientRect();
+      e.preventDefault();
+      const { x, y } = getCoordinates(e);
       canvasContext.strokeStyle = drawColor;
-      canvasContext.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      canvasContext.lineWidth = lineWidth;
+      canvasContext.lineTo(x, y);
       canvasContext.stroke();
     };
 
     const stopDrawing = () => {
+      if (!canvasContext) return;
       setIsDrawing(false);
+      canvasContext.beginPath();
     };
 
     const clearCanvas = () => {
@@ -968,42 +1100,58 @@ export default function Index() {
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-3 items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Выбери цвет:</span>
-                  {['#000000', '#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#A8E6CF', '#FF8B94', '#C7CEEA'].map(color => (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-3 items-center">
+                  <span className="font-medium">Цвет:</span>
+                  {['#000000', '#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#A8E6CF', '#FF8B94', '#C7CEEA', '#FFFFFF'].map(color => (
                     <button
                       key={color}
                       onClick={() => setDrawColor(color)}
                       className={`w-10 h-10 rounded-full border-2 transition-transform hover:scale-110 ${
-                        drawColor === color ? 'border-gray-800 scale-110' : 'border-gray-300'
+                        drawColor === color ? 'border-gray-800 scale-110 ring-2 ring-primary' : 'border-gray-300'
                       }`}
                       style={{ backgroundColor: color }}
                     />
                   ))}
                 </div>
-                <div className="flex gap-2">
-                  <Button onClick={clearCanvas} variant="outline">
-                    <Icon name="Trash2" className="mr-2" size={18} />
-                    Очистить
-                  </Button>
-                  <Button onClick={saveDrawing} className="bg-gradient-to-r from-primary to-secondary">
-                    <Icon name="Save" className="mr-2" size={18} />
-                    Сохранить (+30 НАСОВ)
-                  </Button>
+                
+                <div className="flex items-center gap-4">
+                  <span className="font-medium">Размер кисти:</span>
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="20" 
+                    value={lineWidth}
+                    onChange={(e) => setLineWidth(Number(e.target.value))}
+                    className="w-32"
+                  />
+                  <span className="text-sm text-gray-600">{lineWidth}px</span>
+                  <div className="flex gap-2 ml-auto">
+                    <Button onClick={clearCanvas} variant="outline" size="sm">
+                      <Icon name="Trash2" className="mr-2" size={16} />
+                      Очистить
+                    </Button>
+                    <Button onClick={saveDrawing} className="bg-gradient-to-r from-primary to-secondary" size="sm">
+                      <Icon name="Save" className="mr-2" size={16} />
+                      Сохранить (+30 НАСОВ)
+                    </Button>
+                  </div>
                 </div>
               </div>
               
-              <div className="border-4 border-gray-300 rounded-xl overflow-hidden bg-white">
+              <div className="border-4 border-gray-300 rounded-xl overflow-hidden bg-white relative">
                 <canvas
                   ref={canvasRef}
                   width={800}
                   height={600}
-                  className="w-full cursor-crosshair"
+                  className="w-full cursor-crosshair touch-none"
                   onMouseDown={startDrawing}
                   onMouseMove={draw}
                   onMouseUp={stopDrawing}
                   onMouseLeave={stopDrawing}
+                  onTouchStart={startDrawing}
+                  onTouchMove={draw}
+                  onTouchEnd={stopDrawing}
                 />
               </div>
               
@@ -1286,24 +1434,42 @@ export default function Index() {
     );
   }
 
-  switch (currentPage) {
-    case 'home':
-      return renderHome();
-    case 'courses':
-      return renderCourses();
-    case 'games':
-      return renderGames();
-    case 'draw':
-      return renderDraw();
-    case 'draw-lesson':
-      return renderDrawLesson();
-    case 'profile':
-      return renderProfile();
-    case 'about':
-      return renderAbout();
-    case 'login':
-      return renderLogin();
-    default:
-      return renderHome();
-  }
+  return (
+    <>
+      {currentUser && (
+        <>
+          {renderVoiceAssistant()}
+          <button
+            onClick={() => setShowVoiceAssistant(!showVoiceAssistant)}
+            className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform"
+          >
+            <Icon name="Mic" className="text-white" size={28} />
+          </button>
+        </>
+      )}
+      
+      {(() => {
+        switch (currentPage) {
+          case 'home':
+            return renderHome();
+          case 'courses':
+            return renderCourses();
+          case 'games':
+            return renderGames();
+          case 'draw':
+            return renderDraw();
+          case 'draw-lesson':
+            return renderDrawLesson();
+          case 'profile':
+            return renderProfile();
+          case 'about':
+            return renderAbout();
+          case 'login':
+            return renderLogin();
+          default:
+            return renderHome();
+        }
+      })()}
+    </>
+  );
 }
