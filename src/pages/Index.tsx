@@ -33,6 +33,19 @@ type UserProgress = {
   streak: number;
   nasa: number;
   credits: number;
+  dailyQuests: DailyQuest[];
+  lastQuestDate: string;
+};
+
+type DailyQuest = {
+  id: number;
+  title: string;
+  description: string;
+  progress: number;
+  target: number;
+  reward: number;
+  completed: boolean;
+  icon: string;
 };
 
 export default function Index() {
@@ -46,8 +59,15 @@ export default function Index() {
     averageScore: 78,
     streak: 5,
     nasa: 1250,
-    credits: 45
+    credits: 45,
+    dailyQuests: [],
+    lastQuestDate: ''
   });
+  
+  const [easterEggCount, setEasterEggCount] = useState(0);
+  const [showEasterEgg, setShowEasterEgg] = useState(false);
+  const [easterEggMessage, setEasterEggMessage] = useState('');
+  const [showDailyQuests, setShowDailyQuests] = useState(false);
   const [loginUsername, setLoginUsername] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
   const [activeLesson, setActiveLesson] = useState<{courseId: number; lessonNum: number} | null>(null);
@@ -72,6 +92,7 @@ export default function Index() {
     
     if (savedUser) {
       setCurrentUser(savedUser);
+      checkDailyQuests();
     }
     
     if (savedProgress) {
@@ -81,6 +102,68 @@ export default function Index() {
     if (savedDrawingsData) {
       setSavedDrawings(JSON.parse(savedDrawingsData));
     }
+  }, []);
+
+  const checkDailyQuests = () => {
+    const today = new Date().toDateString();
+    const savedProgress = localStorage.getItem('nasaLearningProgress');
+    
+    if (savedProgress) {
+      const progress = JSON.parse(savedProgress);
+      
+      if (progress.lastQuestDate !== today) {
+        // Генерируем новые ежедневные квесты
+        const newQuests: DailyQuest[] = [
+          {
+            id: 1,
+            title: 'Утренний старт',
+            description: 'Пройди 3 урока',
+            progress: 0,
+            target: 3,
+            reward: 50,
+            completed: false,
+            icon: 'Sun'
+          },
+          {
+            id: 2,
+            title: 'Математический гений',
+            description: 'Реши 10 примеров',
+            progress: 0,
+            target: 10,
+            reward: 30,
+            completed: false,
+            icon: 'Calculator'
+          },
+          {
+            id: 3,
+            title: 'Художник',
+            description: 'Нарисуй и сохрани рисунок',
+            progress: 0,
+            target: 1,
+            reward: 25,
+            completed: false,
+            icon: 'Palette'
+          },
+          {
+            id: 4,
+            title: 'Исследователь',
+            description: 'Открой голосового помощника',
+            progress: 0,
+            target: 1,
+            reward: 15,
+            completed: false,
+            icon: 'Sparkles'
+          }
+        ];
+        
+        setUserProgress(prev => ({
+          ...prev,
+          dailyQuests: newQuests,
+          lastQuestDate: today
+        }));
+      }
+    }
+  };
     
     const mockCourses: Course[] = [
       {
@@ -391,18 +474,128 @@ export default function Index() {
       setVoiceText('В солнечной системе 8 планет: Меркурий, Венера, Земля, Марс, Юпитер, Сатурн, Уран и Нептун');
     }
     
+    // Больше математики
+    else if (lowerCommand.includes('квадрат числа') || lowerCommand.includes('в квадрате')) {
+      const match = lowerCommand.match(/(\d+)/);
+      if (match) {
+        const num = parseInt(match[0]);
+        setVoiceText(`${num} в квадрате равно ${num * num}`);
+      }
+    } else if (lowerCommand.includes('корень из')) {
+      const match = lowerCommand.match(/(\d+)/);
+      if (match) {
+        const num = parseInt(match[0]);
+        setVoiceText(`Корень из ${num} равен ${Math.sqrt(num).toFixed(2)}`);
+      }
+    } else if (lowerCommand.includes('процент')) {
+      const match = lowerCommand.match(/(\d+)\s*процент.*?(\d+)/);
+      if (match) {
+        const percent = parseInt(match[1]);
+        const num = parseInt(match[2]);
+        setVoiceText(`${percent}% от ${num} равно ${(num * percent / 100).toFixed(1)}`);
+      }
+    }
+    
+    // Больше русского языка
+    else if (lowerCommand.includes('сколько букв в слове')) {
+      const words = lowerCommand.split(' ');
+      const lastWord = words[words.length - 1];
+      setVoiceText(`В слове "${lastWord}" ${lastWord.length} букв`);
+    } else if (lowerCommand.includes('синоним')) {
+      if (lowerCommand.includes('красивый')) setVoiceText('Синонимы к слову "красивый": прекрасный, чудесный, великолепный');
+      else if (lowerCommand.includes('большой')) setVoiceText('Синонимы к слову "большой": огромный, гигантский, громадный');
+      else setVoiceText('Спроси про конкретное слово, например: "Синоним слова красивый"');
+    } else if (lowerCommand.includes('антоним')) {
+      if (lowerCommand.includes('добрый')) setVoiceText('Антоним к слову "добрый" - злой');
+      else if (lowerCommand.includes('высокий')) setVoiceText('Антоним к слову "высокий" - низкий');
+      else setVoiceText('Спроси про конкретное слово');
+    }
+    
+    // Больше английского
+    else if (lowerCommand.includes('цвет') && lowerCommand.includes('английски')) {
+      if (lowerCommand.includes('красный')) setVoiceText('Красный по-английски - Red (рэд)');
+      else if (lowerCommand.includes('синий')) setVoiceText('Синий по-английски - Blue (блю)');
+      else if (lowerCommand.includes('зелёный')) setVoiceText('Зелёный по-английски - Green (грин)');
+      else if (lowerCommand.includes('жёлтый')) setVoiceText('Жёлтый по-английски - Yellow (йеллоу)');
+      else setVoiceText('Спроси про конкретный цвет');
+    } else if (lowerCommand.includes('число') && lowerCommand.includes('английски')) {
+      const match = lowerCommand.match(/(\d+)/);
+      if (match) {
+        const num = parseInt(match[0]);
+        const numbers = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+        if (num <= 10) setVoiceText(`${num} по-английски - ${numbers[num]}`);
+        else setVoiceText('Я знаю числа только от 0 до 10 пока');
+      }
+    }
+    
+    // Больше окружающего мира
+    else if (lowerCommand.includes('столица')) {
+      if (lowerCommand.includes('росси')) setVoiceText('Столица России - Москва');
+      else if (lowerCommand.includes('франци')) setVoiceText('Столица Франции - Париж');
+      else if (lowerCommand.includes('англи')) setVoiceText('Столица Англии - Лондон');
+      else if (lowerCommand.includes('япони')) setVoiceText('Столица Японии - Токио');
+      else setVoiceText('Спроси про столицу конкретной страны');
+    } else if (lowerCommand.includes('сколько континентов') || lowerCommand.includes('материк')) {
+      setVoiceText('На Земле 6 материков: Евразия, Африка, Северная Америка, Южная Америка, Австралия и Антарктида');
+    } else if (lowerCommand.includes('океан')) {
+      setVoiceText('На Земле 4 океана: Тихий, Атлантический, Индийский и Северный Ледовитый');
+    }
+    
+    // Пасхалки
+    else if (lowerCommand.includes('расскажи анекдот') || lowerCommand.includes('пошути')) {
+      const jokes = [
+        'Почему математики всегда грустные? Потому что у них много проблем! 😄',
+        'Что делает книга в библиотеке? Страницы листает! 📚',
+        'Почему компьютер пошёл к врачу? У него был вирус! 💻'
+      ];
+      setVoiceText(jokes[Math.floor(Math.random() * jokes.length)]);
+      triggerEasterEgg('🎭 Ты нашёл пасхалку! +50 НАСОВ');
+    } else if (lowerCommand.includes('я самый умный') || lowerCommand.includes('я гений')) {
+      setVoiceText('Конечно, ты самый умный! И я в тебя верю! 🌟🚀');
+      triggerEasterEgg('✨ Пасхалка самоуверенности! +100 НАСОВ');
+    } else if (lowerCommand.includes('космос') || lowerCommand.includes('ракета')) {
+      setVoiceText('🚀 Поехали! До Луны 384 400 км. Первый человек в космосе - Юрий Гагарин!');
+      triggerEasterEgg('🚀 Космическая пасхалка! +150 НАСОВ');
+    } else if (lowerCommand.includes('секрет') || lowerCommand.includes('тайна')) {
+      setVoiceText('Хочешь узнать секрет? Если учиться каждый день, то можно стать кем угодно! 🌟');
+      triggerEasterEgg('🤫 Секретная пасхалка! +75 НАСОВ');
+    }
+    
+    // Квесты
+    else if (lowerCommand.includes('квест') || lowerCommand.includes('задан')) {
+      setShowDailyQuests(true);
+      setVoiceText('Открываю твои ежедневные квесты! Выполняй их и получай награды!');
+    }
+    
     // Общие вопросы
     else if (lowerCommand.includes('привет') || lowerCommand.includes('здравствуй')) {
       setVoiceText(`Привет, ${currentUser}! Чем могу помочь? Могу решить примеры, рассказать правила или открыть нужный раздел!`);
     } else if (lowerCommand.includes('помощь') || lowerCommand.includes('что ты умеешь')) {
-      setVoiceText('Я умею: решать примеры, рассказывать про словарные слова, переводить слова на английский, отвечать на вопросы об окружающем мире и открывать разделы сайта!');
+      setVoiceText('Я умею: решать примеры, рассказывать про словарные слова, переводить слова на английский, отвечать на вопросы об окружающем мире, шутить и многое другое! Попробуй сказать "расскажи анекдот" 😉');
     } else if (lowerCommand.includes('молодец') || lowerCommand.includes('спасибо')) {
       setVoiceText('Рад помочь! Учись с удовольствием! 🚀');
+    } else if (lowerCommand.includes('ты кто') || lowerCommand.includes('как тебя зовут')) {
+      setVoiceText('Я твой умный помощник! Создан чтобы помогать тебе учиться и исследовать мир знаний! 🤖');
     }
     
     else {
-      setVoiceText('Извини, я не понял. Попробуй спросить: "Сколько будет 5 плюс 3?", "Как пишется карандаш?" или "Открой курсы"');
+      setVoiceText('Извини, я не понял. Попробуй спросить: "Сколько будет 5 плюс 3?", "Расскажи анекдот" или "Открой квесты"');
     }
+  };
+
+  const triggerEasterEgg = (message: string) => {
+    setEasterEggMessage(message);
+    setShowEasterEgg(true);
+    setEasterEggCount(prev => prev + 1);
+    
+    const reward = parseInt(message.match(/\+(\d+)/)?.[1] || '0');
+    setUserProgress(prev => ({
+      ...prev,
+      nasa: prev.nasa + reward
+    }));
+    
+    setTimeout(() => setShowEasterEgg(false), 3000);
+  };
   };
 
   const solveMath = (command: string): string => {
@@ -604,9 +797,19 @@ export default function Index() {
           {courses.map((course, index) => (
             <Card 
               key={course.id} 
-              className="hover:shadow-2xl transition-all duration-300 cursor-pointer hover:-translate-y-2 border-2 animate-fade-in"
+              className="hover:shadow-2xl transition-all duration-300 cursor-pointer hover:-translate-y-2 border-2 animate-fade-in relative"
               style={{ animationDelay: `${index * 100}ms`, borderColor: course.color + '40' }}
-              onClick={() => setCurrentPage('courses')}
+              onClick={(e) => {
+                const clickCount = parseInt(e.currentTarget.dataset.clicks || '0') + 1;
+                e.currentTarget.dataset.clicks = clickCount.toString();
+                
+                if (clickCount === 5) {
+                  triggerEasterEgg('🎯 Пасхалка "Упорный кликер"! +200 НАСОВ');
+                  e.currentTarget.dataset.clicks = '0';
+                } else {
+                  setCurrentPage('courses');
+                }
+              }}
             >
               <CardHeader>
                 <div 
@@ -622,7 +825,18 @@ export default function Index() {
           ))}
         </div>
 
-        <Card className="border-2 border-secondary/30 shadow-xl animate-scale-in">
+        <Card 
+          className="border-2 border-secondary/30 shadow-xl animate-scale-in mb-12 cursor-pointer hover:shadow-2xl transition-all"
+          onClick={() => {
+            const secretClick = parseInt(document.body.dataset.secretClicks || '0') + 1;
+            document.body.dataset.secretClicks = secretClick.toString();
+            
+            if (secretClick === 7) {
+              triggerEasterEgg('🔐 Секретная пасхалка! Ты нашёл скрытый клик! +500 НАСОВ');
+              document.body.dataset.secretClicks = '0';
+            }
+          }}
+        >
           <CardHeader>
             <CardTitle className="text-3xl text-center flex items-center justify-center gap-3">
               <Icon name="Sparkles" className="text-accent" />
@@ -1544,17 +1758,126 @@ export default function Index() {
     );
   }
 
+  const renderDailyQuests = () => (
+    <div 
+      className={`fixed inset-0 bg-black/50 z-50 flex items-center justify-center transition-all ${showDailyQuests ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      onClick={() => setShowDailyQuests(false)}
+    >
+      <Card 
+        className="w-full max-w-2xl m-4 border-4 border-yellow-400 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <CardHeader className="bg-gradient-to-r from-yellow-100 to-orange-100 border-b-2 border-yellow-300">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl flex items-center gap-3">
+              <Icon name="Trophy" className="text-yellow-600" size={32} />
+              Ежедневные квесты
+            </CardTitle>
+            <button 
+              onClick={() => setShowDailyQuests(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <Icon name="X" size={24} />
+            </button>
+          </div>
+          <CardDescription className="text-base mt-2">
+            Выполняй задания каждый день и получай награды! 🎁
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6 space-y-4">
+          {userProgress.dailyQuests.length === 0 ? (
+            <div className="text-center py-8 bg-blue-50 rounded-xl border-2 border-blue-200">
+              <Icon name="Sparkles" className="mx-auto text-blue-600 mb-3" size={48} />
+              <p className="text-lg font-bold mb-2">Квесты появятся скоро!</p>
+              <p className="text-gray-600">Заходи каждый день, чтобы получать новые задания</p>
+            </div>
+          ) : (
+            userProgress.dailyQuests.map((quest) => (
+              <Card 
+                key={quest.id} 
+                className={`border-2 ${quest.completed ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200'}`}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${quest.completed ? 'bg-green-500' : 'bg-gradient-to-r from-blue-500 to-purple-500'}`}>
+                      <Icon name={quest.icon} className="text-white" size={24} />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-lg mb-1">{quest.title}</h4>
+                      <p className="text-sm text-gray-600 mb-3">{quest.description}</p>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-700">Прогресс: {quest.progress}/{quest.target}</span>
+                          <span className="font-bold text-yellow-600 flex items-center gap-1">
+                            <Icon name="Coins" size={16} />
+                            +{quest.reward} НАСОВ
+                          </span>
+                        </div>
+                        <Progress value={(quest.progress / quest.target) * 100} className="h-2" />
+                      </div>
+                      
+                      {quest.completed && (
+                        <Badge className="mt-3 bg-green-500">✅ Выполнено</Badge>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+          
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border-2 border-purple-200 mt-6">
+            <p className="text-sm text-center">
+              <Icon name="Info" className="inline mr-1" size={16} />
+              Квесты обновляются каждый день в полночь!
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const renderEasterEgg = () => (
+    <div 
+      className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 transition-all duration-500 ${showEasterEgg ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+    >
+      <Card className="border-4 border-yellow-400 bg-gradient-to-r from-yellow-100 to-orange-100 shadow-2xl animate-bounce">
+        <CardContent className="p-6 text-center">
+          <div className="text-4xl mb-3">🎉</div>
+          <p className="text-xl font-bold text-gray-800">{easterEggMessage}</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   return (
     <>
       {currentUser && (
         <>
           {renderVoiceAssistant()}
+          {renderDailyQuests()}
+          {renderEasterEgg()}
+          
           <button
             onClick={() => setShowVoiceAssistant(!showVoiceAssistant)}
             className="fixed bottom-6 left-6 z-50 w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform"
             title="Голосовой помощник"
           >
             <Icon name="Bot" className="text-white" size={28} />
+          </button>
+          
+          <button
+            onClick={() => setShowDailyQuests(true)}
+            className="fixed bottom-24 left-6 z-50 w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform"
+            title="Ежедневные квесты"
+          >
+            <Icon name="Trophy" className="text-white" size={28} />
+            {userProgress.dailyQuests.some(q => !q.completed) && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center font-bold animate-pulse">
+                {userProgress.dailyQuests.filter(q => !q.completed).length}
+              </span>
+            )}
           </button>
         </>
       )}
