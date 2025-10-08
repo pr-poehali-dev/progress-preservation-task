@@ -227,40 +227,40 @@ export default function Index() {
             </h1>
           </div>
           
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="flex items-center space-x-3 md:space-x-6 overflow-x-auto">
             <button 
               onClick={() => setCurrentPage('home')}
-              className={`font-medium transition-colors ${currentPage === 'home' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
+              className={`font-medium transition-colors whitespace-nowrap text-sm md:text-base ${currentPage === 'home' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
             >
               Главная
             </button>
             <button 
               onClick={() => setCurrentPage('courses')}
-              className={`font-medium transition-colors ${currentPage === 'courses' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
+              className={`font-medium transition-colors whitespace-nowrap text-sm md:text-base ${currentPage === 'courses' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
             >
               Курсы
             </button>
             <button 
               onClick={() => setCurrentPage('games')}
-              className={`font-medium transition-colors ${currentPage === 'games' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
+              className={`font-medium transition-colors whitespace-nowrap text-sm md:text-base ${currentPage === 'games' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
             >
               Игры
             </button>
             <button 
               onClick={() => setCurrentPage('draw')}
-              className={`font-medium transition-colors ${currentPage === 'draw' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
+              className={`font-medium transition-colors whitespace-nowrap text-sm md:text-base ${currentPage === 'draw' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
             >
               🎨 Рисовать
             </button>
             <button 
               onClick={() => setCurrentPage('draw-lesson')}
-              className={`font-medium transition-colors ${currentPage === 'draw-lesson' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
+              className={`font-medium transition-colors whitespace-nowrap text-sm md:text-base ${currentPage === 'draw-lesson' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
             >
-              📚 Урок рисования
+              📚 Урок
             </button>
             <button 
               onClick={() => setCurrentPage('about')}
-              className={`font-medium transition-colors ${currentPage === 'about' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
+              className={`font-medium transition-colors whitespace-nowrap text-sm md:text-base ${currentPage === 'about' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
             >
               О нас
             </button>
