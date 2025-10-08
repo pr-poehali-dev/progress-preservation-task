@@ -253,6 +253,12 @@ export default function Index() {
               🎨 Рисовать
             </button>
             <button 
+              onClick={() => setCurrentPage('draw-lesson')}
+              className={`font-medium transition-colors ${currentPage === 'draw-lesson' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
+            >
+              📚 Урок рисования
+            </button>
+            <button 
               onClick={() => setCurrentPage('about')}
               className={`font-medium transition-colors ${currentPage === 'about' ? 'text-primary' : 'text-gray-600 hover:text-primary'}`}
             >
@@ -1047,6 +1053,109 @@ export default function Index() {
     );
   };
 
+  const renderDrawLesson = () => {
+    const lessons = [
+      {
+        id: 1,
+        title: 'Основы рисования',
+        description: 'Научись рисовать простые фигуры',
+        steps: [
+          { step: 1, title: 'Нарисуй круг', instruction: 'Попробуй нарисовать ровный круг', example: '⭕' },
+          { step: 2, title: 'Нарисуй квадрат', instruction: 'Нарисуй квадрат с ровными сторонами', example: '⬜' },
+          { step: 3, title: 'Нарисуй треугольник', instruction: 'Нарисуй треугольник', example: '🔺' }
+        ]
+      },
+      {
+        id: 2,
+        title: 'Рисуем природу',
+        description: 'Научись рисовать деревья и цветы',
+        steps: [
+          { step: 1, title: 'Нарисуй дерево', instruction: 'Нарисуй ствол и крону дерева', example: '🌳' },
+          { step: 2, title: 'Нарисуй цветок', instruction: 'Нарисуй цветок с лепестками', example: '🌸' },
+          { step: 3, title: 'Нарисуй солнце', instruction: 'Нарисуй солнце с лучами', example: '☀️' }
+        ]
+      },
+      {
+        id: 3,
+        title: 'Рисуем животных',
+        description: 'Научись рисовать простых животных',
+        steps: [
+          { step: 1, title: 'Нарисуй кошку', instruction: 'Нарисуй простую кошку', example: '🐱' },
+          { step: 2, title: 'Нарисуй рыбку', instruction: 'Нарисуй рыбку в воде', example: '🐠' },
+          { step: 3, title: 'Нарисуй птичку', instruction: 'Нарисуй летящую птичку', example: '🐦' }
+        ]
+      }
+    ];
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+        {renderNavigation()}
+        
+        <div className="container mx-auto px-4 py-12 max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Уроки рисования 🎨
+            </h2>
+            <p className="text-xl text-gray-600">Научись рисовать шаг за шагом!</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {lessons.map((lesson) => (
+              <Card key={lesson.id} className="border-2 hover:shadow-xl transition-shadow">
+                <CardHeader>
+                  <CardTitle className="text-2xl">{lesson.title}</CardTitle>
+                  <CardDescription>{lesson.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    {lesson.steps.map((step) => (
+                      <div key={step.step} className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold">
+                            {step.step}
+                          </div>
+                          <h4 className="font-bold">{step.title}</h4>
+                          <span className="text-3xl ml-auto">{step.example}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 ml-11">{step.instruction}</p>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <Button 
+                    className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                    onClick={() => setCurrentPage('draw')}
+                  >
+                    <Icon name="Paintbrush" className="mr-2" size={18} />
+                    Начать рисовать
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <Card className="mt-12 border-2 border-yellow-300 bg-yellow-50">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <Icon name="Lightbulb" className="text-yellow-600" size={32} />
+                <div>
+                  <h3 className="font-bold text-xl mb-2">Советы начинающим художникам:</h3>
+                  <ul className="space-y-2 text-gray-700">
+                    <li>✏️ Начинай с простых форм - круг, квадрат, треугольник</li>
+                    <li>🎨 Экспериментируй с разными цветами</li>
+                    <li>👀 Внимательно смотри на примеры</li>
+                    <li>💪 Практикуйся каждый день</li>
+                    <li>🌟 Не бойся ошибаться - это часть обучения!</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  };
+
   if (activeLesson) {
     const course = courses.find(c => c.id === activeLesson.courseId);
     const questions = getLessonQuestions(activeLesson.courseId, activeLesson.lessonNum);
@@ -1186,6 +1295,8 @@ export default function Index() {
       return renderGames();
     case 'draw':
       return renderDraw();
+    case 'draw-lesson':
+      return renderDrawLesson();
     case 'profile':
       return renderProfile();
     case 'about':
