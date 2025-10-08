@@ -58,10 +58,13 @@ export default function Index() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [canvasContext, setCanvasContext] = useState<CanvasRenderingContext2D | null>(null);
   const [drawColor, setDrawColor] = useState('#000000');
+  const [savedDrawings, setSavedDrawings] = useState<string[]>([]);
+  const [showSaveNotification, setShowSaveNotification] = useState(false);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('nasaLearningUser');
     const savedProgress = localStorage.getItem('nasaLearningProgress');
+    const savedDrawingsData = localStorage.getItem('nasaLearningDrawings');
     
     if (savedUser) {
       setCurrentUser(savedUser);
@@ -69,6 +72,10 @@ export default function Index() {
     
     if (savedProgress) {
       setUserProgress(JSON.parse(savedProgress));
+    }
+    
+    if (savedDrawingsData) {
+      setSavedDrawings(JSON.parse(savedDrawingsData));
     }
     
     const mockCourses: Course[] = [
@@ -125,6 +132,10 @@ export default function Index() {
   useEffect(() => {
     localStorage.setItem('nasaLearningProgress', JSON.stringify(userProgress));
   }, [userProgress]);
+
+  useEffect(() => {
+    localStorage.setItem('nasaLearningDrawings', JSON.stringify(savedDrawings));
+  }, [savedDrawings]);
 
   const handleLogin = () => {
     if (loginUsername && loginEmail) {
@@ -904,6 +915,29 @@ export default function Index() {
       canvasContext.clearRect(0, 0, canvas.width, canvas.height);
     };
 
+    const saveDrawing = () => {
+      if (!canvasContext) return;
+      const canvas = canvasContext.canvas;
+      const imageData = canvas.toDataURL('image/png');
+      setSavedDrawings([imageData, ...savedDrawings]);
+      
+      const earnedNasa = 30;
+      setUserProgress({
+        ...userProgress,
+        nasa: userProgress.nasa + earnedNasa,
+      });
+      
+      setShowSaveNotification(true);
+      setTimeout(() => setShowSaveNotification(false), 3000);
+      
+      clearCanvas();
+    };
+
+    const deleteDrawing = (index: number) => {
+      const newDrawings = savedDrawings.filter((_, i) => i !== index);
+      setSavedDrawings(newDrawings);
+    };
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-orange-50 to-yellow-50">
         {renderNavigation()}
@@ -918,6 +952,16 @@ export default function Index() {
               <CardDescription>Рисуй и развивай свою креативность!</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {showSaveNotification && (
+                <div className="bg-green-100 border-2 border-green-500 rounded-xl p-4 flex items-center gap-3 animate-bounce-in">
+                  <Icon name="CheckCircle" className="text-green-600" size={24} />
+                  <div className="flex-1">
+                    <p className="font-bold text-green-800">Рисунок сохранён в альбом! 🎉</p>
+                    <p className="text-sm text-green-700">+30 НАСОВ за творчество!</p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-3 items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Выбери цвет:</span>
@@ -932,10 +976,16 @@ export default function Index() {
                     />
                   ))}
                 </div>
-                <Button onClick={clearCanvas} variant="outline">
-                  <Icon name="Trash2" className="mr-2" size={18} />
-                  Очистить
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={clearCanvas} variant="outline">
+                    <Icon name="Trash2" className="mr-2" size={18} />
+                    Очистить
+                  </Button>
+                  <Button onClick={saveDrawing} className="bg-gradient-to-r from-primary to-secondary">
+                    <Icon name="Save" className="mr-2" size={18} />
+                    Сохранить (+30 НАСОВ)
+                  </Button>
+                </div>
               </div>
               
               <div className="border-4 border-gray-300 rounded-xl overflow-hidden bg-white">
@@ -964,6 +1014,32 @@ export default function Index() {
                   ))}
                 </div>
               </div>
+
+              {savedDrawings.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <Icon name="Images" className="text-primary" />
+                    Мой альбом ({savedDrawings.length})
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {savedDrawings.map((drawing, index) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={drawing} 
+                          alt={`Рисунок ${index + 1}`}
+                          className="w-full h-48 object-cover rounded-xl border-2 border-gray-300 shadow-md"
+                        />
+                        <button
+                          onClick={() => deleteDrawing(index)}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Icon name="Trash2" size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
