@@ -57,6 +57,17 @@ export default function Index() {
   const [lessonScore, setLessonScore] = useState(0);
 
   useEffect(() => {
+    const savedUser = localStorage.getItem('nasaLearningUser');
+    const savedProgress = localStorage.getItem('nasaLearningProgress');
+    
+    if (savedUser) {
+      setCurrentUser(savedUser);
+    }
+    
+    if (savedProgress) {
+      setUserProgress(JSON.parse(savedProgress));
+    }
+    
     const mockCourses: Course[] = [
       {
         id: 1,
@@ -102,11 +113,36 @@ export default function Index() {
     setGames(mockGames);
   }, []);
 
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('nasaLearningUser', currentUser);
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem('nasaLearningProgress', JSON.stringify(userProgress));
+  }, [userProgress]);
+
   const handleLogin = () => {
     if (loginUsername && loginEmail) {
       setCurrentUser(loginUsername);
       setCurrentPage('home');
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('nasaLearningUser');
+    localStorage.removeItem('nasaLearningProgress');
+    setCurrentUser(null);
+    setCurrentPage('login');
+    setUserProgress({
+      totalLessons: 24,
+      completedLessons: 0,
+      averageScore: 0,
+      streak: 0,
+      nasa: 0,
+      credits: 0
+    });
   };
 
   const progressPercentage = (userProgress.completedLessons / userProgress.totalLessons) * 100;
@@ -553,6 +589,14 @@ export default function Index() {
             </Avatar>
             <CardTitle className="text-3xl">{currentUser}</CardTitle>
             <CardDescription className="text-lg">Юный ученик</CardDescription>
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              className="mt-4"
+            >
+              <Icon name="LogOut" className="mr-2" size={18} />
+              Выйти из аккаунта
+            </Button>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-6 mb-8">
