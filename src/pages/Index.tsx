@@ -85,25 +85,6 @@ export default function Index() {
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem('nasaLearningUser');
-    const savedProgress = localStorage.getItem('nasaLearningProgress');
-    const savedDrawingsData = localStorage.getItem('nasaLearningDrawings');
-    
-    if (savedUser) {
-      setCurrentUser(savedUser);
-      checkDailyQuests();
-    }
-    
-    if (savedProgress) {
-      setUserProgress(JSON.parse(savedProgress));
-    }
-    
-    if (savedDrawingsData) {
-      setSavedDrawings(JSON.parse(savedDrawingsData));
-    }
-  }, []);
-
   const checkDailyQuests = () => {
     const today = new Date().toDateString();
     const savedProgress = localStorage.getItem('nasaLearningProgress');
@@ -112,7 +93,6 @@ export default function Index() {
       const progress = JSON.parse(savedProgress);
       
       if (progress.lastQuestDate !== today) {
-        // Генерируем новые ежедневные квесты
         const newQuests: DailyQuest[] = [
           {
             id: 1,
@@ -164,7 +144,27 @@ export default function Index() {
       }
     }
   };
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem('nasaLearningUser');
+    const savedProgress = localStorage.getItem('nasaLearningProgress');
+    const savedDrawingsData = localStorage.getItem('nasaLearningDrawings');
     
+    if (savedUser) {
+      setCurrentUser(savedUser);
+      checkDailyQuests();
+    }
+    
+    if (savedProgress) {
+      setUserProgress(JSON.parse(savedProgress));
+    }
+    
+    if (savedDrawingsData) {
+      setSavedDrawings(JSON.parse(savedDrawingsData));
+    }
+  }, []);
+
+  useEffect(() => {
     const mockCourses: Course[] = [
       {
         id: 1,
@@ -242,7 +242,9 @@ export default function Index() {
       averageScore: 0,
       streak: 0,
       nasa: 0,
-      credits: 0
+      credits: 0,
+      dailyQuests: [],
+      lastQuestDate: ''
     });
   };
 
@@ -355,7 +357,14 @@ export default function Index() {
 
           <div>
             {currentUser ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 md:gap-4">
+                <a 
+                  href="tel:+79991234567" 
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition-all font-medium text-sm md:text-base"
+                >
+                  <Icon name="Phone" size={18} />
+                  <span className="hidden md:inline">Горячая линия</span>
+                </a>
                 <div className="hidden md:flex items-center gap-3">
                   <div className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-yellow-100 to-yellow-50 rounded-full border border-yellow-300">
                     <Icon name="Coins" size={16} className="text-yellow-600" />
@@ -409,6 +418,9 @@ export default function Index() {
     } else if (lowerCommand.includes('профиль')) {
       setCurrentPage('profile');
       setVoiceText('Открываю профиль');
+    } else if (lowerCommand.includes('квест')) {
+      setShowDailyQuests(true);
+      setVoiceText('Открываю ежедневные квесты');
     } else if (lowerCommand.includes('сколько нас') || lowerCommand.includes('баланс')) {
       setVoiceText(`У тебя ${userProgress.nasa} НАСОВ и ${userProgress.credits} кредитов`);
     }
@@ -595,7 +607,6 @@ export default function Index() {
     }));
     
     setTimeout(() => setShowEasterEgg(false), 3000);
-  };
   };
 
   const solveMath = (command: string): string => {
@@ -794,7 +805,7 @@ export default function Index() {
         )}
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {courses.map((course, index) => (
+          {courses && courses.length > 0 ? courses.map((course, index) => (
             <Card 
               key={course.id} 
               className="hover:shadow-2xl transition-all duration-300 cursor-pointer hover:-translate-y-2 border-2 animate-fade-in relative"
@@ -822,7 +833,7 @@ export default function Index() {
                 <CardDescription className="text-center">{course.description}</CardDescription>
               </CardHeader>
             </Card>
-          ))}
+          )) : null}
         </div>
 
         <Card 
@@ -886,7 +897,7 @@ export default function Index() {
           </TabsList>
           
           <TabsContent value="all" className="grid md:grid-cols-2 gap-6">
-            {courses.map((course) => (
+            {courses && courses.length > 0 ? courses.map((course) => (
               <Card key={course.id} className="hover:shadow-xl transition-all border-2" style={{ borderColor: course.color + '40' }}>
                 <CardHeader>
                   <div className="flex items-center gap-4">
@@ -935,10 +946,10 @@ export default function Index() {
                   </Button>
                 </CardContent>
               </Card>
-            ))}
+            )) : null}
           </TabsContent>
           
-          {courses.map((course) => (
+          {courses && courses.length > 0 ? courses.map((course) => (
             <TabsContent key={course.subject} value={course.subject}>
               <Card className="border-2" style={{ borderColor: course.color + '40' }}>
                 <CardHeader>
@@ -977,7 +988,7 @@ export default function Index() {
                 </CardContent>
               </Card>
             </TabsContent>
-          ))}
+          )) : null}
         </Tabs>
       </div>
     </div>
@@ -996,7 +1007,7 @@ export default function Index() {
         </div>
         
         <div className="grid md:grid-cols-2 gap-6">
-          {games.map((game, index) => (
+          {games && games.length > 0 ? games.map((game, index) => (
             <Card 
               key={game.id} 
               className="hover:shadow-xl transition-all cursor-pointer hover:-translate-y-1 border-2 animate-fade-in"
@@ -1046,7 +1057,7 @@ export default function Index() {
                 </Button>
               </CardContent>
             </Card>
-          ))}
+          )) : null}
         </div>
       </div>
     </div>
@@ -1190,6 +1201,94 @@ export default function Index() {
     </div>
   );
 
+  const renderDailyQuests = () => (
+    <div 
+      className={`fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 transition-opacity ${showDailyQuests ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      onClick={() => setShowDailyQuests(false)}
+    >
+      <Card 
+        className="w-full max-w-2xl border-2 shadow-2xl animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <CardHeader className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl flex items-center gap-2">
+              <Icon name="Target" size={28} />
+              Ежедневные квесты
+            </CardTitle>
+            <button 
+              onClick={() => setShowDailyQuests(false)}
+              className="text-white hover:text-gray-200 transition"
+            >
+              <Icon name="X" size={24} />
+            </button>
+          </div>
+          <CardDescription className="text-purple-100">
+            Выполняй задания и получай награды каждый день!
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-6">
+          {userProgress.dailyQuests && userProgress.dailyQuests.length > 0 ? userProgress.dailyQuests.map((quest) => (
+            <div 
+              key={quest.id} 
+              className={`p-4 rounded-xl border-2 transition-all ${
+                quest.completed 
+                  ? 'bg-green-50 border-green-300' 
+                  : 'bg-gray-50 border-gray-200 hover:border-primary/50'
+              }`}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start gap-3">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    quest.completed ? 'bg-green-500' : 'bg-gradient-to-br from-primary/20 to-secondary/20'
+                  }`}>
+                    <Icon 
+                      name={quest.completed ? 'CheckCircle' : quest.icon as any} 
+                      className={quest.completed ? 'text-white' : 'text-primary'} 
+                      size={24} 
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg">{quest.title}</h4>
+                    <p className="text-sm text-gray-600">{quest.description}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 bg-yellow-100 px-3 py-1 rounded-full">
+                  <Icon name="Coins" className="text-yellow-600" size={16} />
+                  <span className="font-bold text-yellow-700">+{quest.reward}</span>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Прогресс</span>
+                  <span className="font-medium">{quest.progress} / {quest.target}</span>
+                </div>
+                <Progress 
+                  value={(quest.progress / quest.target) * 100} 
+                  className="h-2"
+                />
+              </div>
+            </div>
+          )) : (
+            <div className="text-center py-8 bg-blue-50 rounded-xl border-2 border-blue-200">
+              <Icon name="Sparkles" className="mx-auto text-blue-600 mb-3" size={48} />
+              <p className="text-lg font-bold mb-2">Квесты скоро появятся!</p>
+              <p className="text-gray-600">Заходи каждый день, чтобы получать новые задания</p>
+            </div>
+          )}
+          
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border-2 border-blue-200">
+            <p className="text-center text-sm text-gray-700">
+              <Icon name="Clock" className="inline mr-1" size={16} />
+              Квесты обновляются каждый день в полночь!
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   const renderAbout = () => (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
       {renderNavigation()}
@@ -1205,6 +1304,26 @@ export default function Index() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-8">
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-6 rounded-xl mb-6">
+              <h3 className="text-2xl font-bold mb-3 flex items-center gap-2">
+                <Icon name="Phone" size={28} />
+                Горячая линия поддержки
+              </h3>
+              <p className="text-lg mb-4">
+                Нужна помощь? Наши специалисты готовы ответить на все вопросы!
+              </p>
+              <a 
+                href="tel:+79991234567" 
+                className="inline-flex items-center gap-3 bg-white text-green-600 px-6 py-3 rounded-lg font-bold text-xl hover:shadow-xl transition-all"
+              >
+                <Icon name="PhoneCall" size={24} />
+                +7 (999) 123-45-67
+              </a>
+              <p className="text-sm mt-3 text-green-100">
+                Время работы: Пн-Пт 9:00-21:00, Сб-Вс 10:00-18:00
+              </p>
+            </div>
+
             <div>
               <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
                 <Icon name="Target" className="text-primary" />
@@ -1500,7 +1619,7 @@ export default function Index() {
                     Мой альбом ({savedDrawings.length})
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {savedDrawings.map((drawing, index) => (
+                    {savedDrawings && savedDrawings.length > 0 ? savedDrawings.map((drawing, index) => (
                       <div key={index} className="relative group">
                         <img 
                           src={drawing} 
@@ -1514,7 +1633,7 @@ export default function Index() {
                           <Icon name="Trash2" size={16} />
                         </button>
                       </div>
-                    ))}
+                    )) : null}
                   </div>
                 </div>
               )}
@@ -1572,7 +1691,7 @@ export default function Index() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {lessons.map((lesson) => (
+            {lessons && lessons.length > 0 ? lessons.map((lesson) => (
               <Card key={lesson.id} className="border-2 hover:shadow-xl transition-shadow">
                 <CardHeader>
                   <CardTitle className="text-2xl">{lesson.title}</CardTitle>
@@ -1580,7 +1699,7 @@ export default function Index() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
-                    {lesson.steps.map((step) => (
+                    {lesson.steps && lesson.steps.length > 0 ? lesson.steps.map((step) => (
                       <div key={step.step} className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl">
                         <div className="flex items-center gap-3 mb-2">
                           <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold">
@@ -1591,7 +1710,7 @@ export default function Index() {
                         </div>
                         <p className="text-sm text-gray-600 ml-11">{step.instruction}</p>
                       </div>
-                    ))}
+                    )) : null}
                   </div>
                   
                   <Button 
@@ -1603,7 +1722,7 @@ export default function Index() {
                   </Button>
                 </CardContent>
               </Card>
-            ))}
+            )) : null}
           </div>
 
           <Card className="mt-12 border-2 border-yellow-300 bg-yellow-50">
@@ -1627,6 +1746,19 @@ export default function Index() {
       </div>
     );
   };
+
+  const renderEasterEgg = () => (
+    <div 
+      className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 transition-all duration-500 ${showEasterEgg ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
+    >
+      <Card className="border-4 border-yellow-400 bg-gradient-to-r from-yellow-100 to-orange-100 shadow-2xl animate-bounce">
+        <CardContent className="p-6 text-center">
+          <div className="text-4xl mb-3">🎉</div>
+          <p className="text-xl font-bold text-gray-800">{easterEggMessage}</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   if (activeLesson) {
     const course = courses.find(c => c.id === activeLesson.courseId);
@@ -1654,7 +1786,7 @@ export default function Index() {
             <Icon name="ArrowLeft" className="mr-2" size={18} />
             Назад к курсам
           </Button>
-
+  
           <Card className="border-2 shadow-xl" style={{ borderColor: course?.color + '40' }}>
             <CardHeader>
               <div className="flex items-center justify-between mb-4">
@@ -1683,7 +1815,7 @@ export default function Index() {
                   <h3 className="text-2xl font-bold mb-6 text-center">{currentQ.q}</h3>
                   
                   <div className="grid gap-4">
-                    {currentQ.a.map((answer, index) => (
+                    {currentQ && currentQ.a && currentQ.a.length > 0 ? currentQ.a.map((answer, index) => (
                       <button
                         key={index}
                         onClick={() => !showResult && handleAnswerSelect(index)}
@@ -1711,7 +1843,7 @@ export default function Index() {
                           )}
                         </div>
                       </button>
-                    ))}
+                    )) : null}
                   </div>
                 </>
               ) : (
@@ -1758,99 +1890,6 @@ export default function Index() {
     );
   }
 
-  const renderDailyQuests = () => (
-    <div 
-      className={`fixed inset-0 bg-black/50 z-50 flex items-center justify-center transition-all ${showDailyQuests ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-      onClick={() => setShowDailyQuests(false)}
-    >
-      <Card 
-        className="w-full max-w-2xl m-4 border-4 border-yellow-400 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <CardHeader className="bg-gradient-to-r from-yellow-100 to-orange-100 border-b-2 border-yellow-300">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl flex items-center gap-3">
-              <Icon name="Trophy" className="text-yellow-600" size={32} />
-              Ежедневные квесты
-            </CardTitle>
-            <button 
-              onClick={() => setShowDailyQuests(false)}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <Icon name="X" size={24} />
-            </button>
-          </div>
-          <CardDescription className="text-base mt-2">
-            Выполняй задания каждый день и получай награды! 🎁
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6 space-y-4">
-          {userProgress.dailyQuests.length === 0 ? (
-            <div className="text-center py-8 bg-blue-50 rounded-xl border-2 border-blue-200">
-              <Icon name="Sparkles" className="mx-auto text-blue-600 mb-3" size={48} />
-              <p className="text-lg font-bold mb-2">Квесты появятся скоро!</p>
-              <p className="text-gray-600">Заходи каждый день, чтобы получать новые задания</p>
-            </div>
-          ) : (
-            userProgress.dailyQuests.map((quest) => (
-              <Card 
-                key={quest.id} 
-                className={`border-2 ${quest.completed ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200'}`}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${quest.completed ? 'bg-green-500' : 'bg-gradient-to-r from-blue-500 to-purple-500'}`}>
-                      <Icon name={quest.icon} className="text-white" size={24} />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-lg mb-1">{quest.title}</h4>
-                      <p className="text-sm text-gray-600 mb-3">{quest.description}</p>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-700">Прогресс: {quest.progress}/{quest.target}</span>
-                          <span className="font-bold text-yellow-600 flex items-center gap-1">
-                            <Icon name="Coins" size={16} />
-                            +{quest.reward} НАСОВ
-                          </span>
-                        </div>
-                        <Progress value={(quest.progress / quest.target) * 100} className="h-2" />
-                      </div>
-                      
-                      {quest.completed && (
-                        <Badge className="mt-3 bg-green-500">✅ Выполнено</Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-          
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border-2 border-purple-200 mt-6">
-            <p className="text-sm text-center">
-              <Icon name="Info" className="inline mr-1" size={16} />
-              Квесты обновляются каждый день в полночь!
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderEasterEgg = () => (
-    <div 
-      className={`fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 transition-all duration-500 ${showEasterEgg ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}
-    >
-      <Card className="border-4 border-yellow-400 bg-gradient-to-r from-yellow-100 to-orange-100 shadow-2xl animate-bounce">
-        <CardContent className="p-6 text-center">
-          <div className="text-4xl mb-3">🎉</div>
-          <p className="text-xl font-bold text-gray-800">{easterEggMessage}</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   return (
     <>
       {currentUser && (
@@ -1873,7 +1912,7 @@ export default function Index() {
             title="Ежедневные квесты"
           >
             <Icon name="Trophy" className="text-white" size={28} />
-            {userProgress.dailyQuests.some(q => !q.completed) && (
+            {userProgress.dailyQuests && userProgress.dailyQuests.some(q => !q.completed) && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center font-bold animate-pulse">
                 {userProgress.dailyQuests.filter(q => !q.completed).length}
               </span>
