@@ -84,6 +84,8 @@ export default function Index() {
   const [showVoiceAssistant, setShowVoiceAssistant] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState('');
+  const [showPenaltyNotification, setShowPenaltyNotification] = useState(false);
+  const [penaltyAmount, setPenaltyAmount] = useState(0);
 
   const checkDailyQuests = () => {
     const today = new Date().toDateString();
@@ -91,6 +93,29 @@ export default function Index() {
     
     if (savedProgress) {
       const progress = JSON.parse(savedProgress);
+      
+      // Проверяем, не пропустил ли пользователь квесты вчера
+      if (progress.lastQuestDate && progress.lastQuestDate !== today) {
+        const lastDate = new Date(progress.lastQuestDate);
+        const todayDate = new Date(today);
+        const daysDiff = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // За каждый пропущенный день снимаем 1 НАС
+        if (daysDiff > 0 && progress.dailyQuests && progress.dailyQuests.length > 0) {
+          const incompletedQuests = progress.dailyQuests.filter((q: DailyQuest) => !q.completed).length;
+          if (incompletedQuests > 0) {
+            const penalty = daysDiff;
+            setPenaltyAmount(penalty);
+            setShowPenaltyNotification(true);
+            setTimeout(() => setShowPenaltyNotification(false), 5000);
+            
+            setUserProgress(prev => ({
+              ...prev,
+              nasa: Math.max(0, prev.nasa - penalty)
+            }));
+          }
+        }
+      }
       
       if (progress.lastQuestDate !== today) {
         const newQuests: DailyQuest[] = [
@@ -142,6 +167,57 @@ export default function Index() {
           lastQuestDate: today
         }));
       }
+    } else {
+      // Первый вход - создаём квесты
+      const today = new Date().toDateString();
+      const newQuests: DailyQuest[] = [
+        {
+          id: 1,
+          title: 'Утренний старт',
+          description: 'Пройди 3 урока',
+          progress: 0,
+          target: 3,
+          reward: 50,
+          completed: false,
+          icon: 'Sun'
+        },
+        {
+          id: 2,
+          title: 'Математический гений',
+          description: 'Реши 10 примеров',
+          progress: 0,
+          target: 10,
+          reward: 30,
+          completed: false,
+          icon: 'Calculator'
+        },
+        {
+          id: 3,
+          title: 'Художник',
+          description: 'Нарисуй и сохрани рисунок',
+          progress: 0,
+          target: 1,
+          reward: 25,
+          completed: false,
+          icon: 'Palette'
+        },
+        {
+          id: 4,
+          title: 'Исследователь',
+          description: 'Открой голосового помощника',
+          progress: 0,
+          target: 1,
+          reward: 15,
+          completed: false,
+          icon: 'Sparkles'
+        }
+      ];
+      
+      setUserProgress(prev => ({
+        ...prev,
+        dailyQuests: newQuests,
+        lastQuestDate: today
+      }));
     }
   };
 
@@ -162,7 +238,16 @@ export default function Index() {
     if (savedDrawingsData) {
       setSavedDrawings(JSON.parse(savedDrawingsData));
     }
-  }, []);
+    
+    // Проверяем квесты каждые 10 секунд
+    const questCheckInterval = setInterval(() => {
+      if (currentUser) {
+        checkDailyQuests();
+      }
+    }, 10000);
+    
+    return () => clearInterval(questCheckInterval);
+  }, [currentUser]);
 
   useEffect(() => {
     const mockCourses: Course[] = [
@@ -293,11 +378,38 @@ export default function Index() {
       } else {
         const earnedNasa = 50;
         const earnedCredits = 5;
-        setUserProgress({
-          ...userProgress,
-          nasa: userProgress.nasa + earnedNasa,
-          credits: userProgress.credits + earnedCredits,
-          completedLessons: userProgress.completedLessons + 1
+        setUserProgress(prev => {
+          const newProgress = {
+            ...prev,
+            nasa: prev.nasa + earnedNasa,
+            credits: prev.credits + earnedCredits,
+            completedLessons: prev.completedLessons + 1
+          };
+          
+          // Обновляем квест "Утренний старт" (пройти 3 урока)
+          const updatedQuests = prev.dailyQuests.map(quest => {
+            if (quest.id === 1 && !quest.completed) {
+              const newProgressValue = quest.progress + 1;
+              const isCompleted = newProgressValue >= quest.target;
+              return {
+                ...quest,
+                progress: newProgressValue,
+                completed: isCompleted
+              };
+            }
+            return quest;
+          });
+          
+          // Если квест выполнен, добавляем награду
+          const morningQuest = updatedQuests.find(q => q.id === 1);
+          if (morningQuest?.completed && !prev.dailyQuests.find(q => q.id === 1)?.completed) {
+            newProgress.nasa += morningQuest.reward;
+          }
+          
+          return {
+            ...newProgress,
+            dailyQuests: updatedQuests
+          };
         });
       }
     }, 1500);
@@ -615,22 +727,57 @@ export default function Index() {
     const multMatch = command.match(/(\d+)\s*(умножить|раз|\*|×)\s*(\d+)/);
     const divMatch = command.match(/(\d+)\s*(разделить|делить|\/|:)\s*(\d+)/);
     
+    // Обновляем квест "Математический гений" при решении примера
+    const updateMathQuest = () => {
+      setUserProgress(prev => {
+        const updatedQuests = prev.dailyQuests.map(quest => {
+          if (quest.id === 2 && !quest.completed) {
+            const newProgressValue = quest.progress + 1;
+            const isCompleted = newProgressValue >= quest.target;
+            return {
+              ...quest,
+              progress: newProgressValue,
+              completed: isCompleted
+            };
+          }
+          return quest;
+        });
+        
+        // Если квест выполнен, добавляем награду
+        const mathQuest = updatedQuests.find(q => q.id === 2);
+        let newNasa = prev.nasa;
+        if (mathQuest?.completed && !prev.dailyQuests.find(q => q.id === 2)?.completed) {
+          newNasa += mathQuest.reward;
+        }
+        
+        return {
+          ...prev,
+          nasa: newNasa,
+          dailyQuests: updatedQuests
+        };
+      });
+    };
+    
     if (plusMatch) {
       const a = parseInt(plusMatch[1]);
       const b = parseInt(plusMatch[3]);
+      updateMathQuest();
       return `${a} плюс ${b} равно ${a + b}`;
     } else if (minusMatch) {
       const a = parseInt(minusMatch[1]);
       const b = parseInt(minusMatch[3]);
+      updateMathQuest();
       return `${a} минус ${b} равно ${a - b}`;
     } else if (multMatch) {
       const a = parseInt(multMatch[1]);
       const b = parseInt(multMatch[3]);
+      updateMathQuest();
       return `${a} умножить на ${b} равно ${a * b}`;
     } else if (divMatch) {
       const a = parseInt(divMatch[1]);
       const b = parseInt(divMatch[3]);
       if (b === 0) return 'На ноль делить нельзя!';
+      updateMathQuest();
       return `${a} разделить на ${b} равно ${a / b}`;
     }
     
@@ -1278,11 +1425,20 @@ export default function Index() {
             </div>
           )}
           
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border-2 border-blue-200">
-            <p className="text-center text-sm text-gray-700">
-              <Icon name="Clock" className="inline mr-1" size={16} />
-              Квесты обновляются каждый день в полночь!
-            </p>
+          <div className="space-y-3">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border-2 border-blue-200">
+              <p className="text-center text-sm text-gray-700">
+                <Icon name="Clock" className="inline mr-1" size={16} />
+                Квесты обновляются каждый день в полночь!
+              </p>
+            </div>
+            
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-xl border-2 border-red-200">
+              <p className="text-center text-sm text-red-700 font-medium">
+                <Icon name="AlertTriangle" className="inline mr-1" size={16} />
+                Не выполнишь квесты? Минус 1 НАС за каждый пропущенный день!
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -1452,16 +1608,20 @@ export default function Index() {
     };
 
     const getCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect();
+      const canvas = e.currentTarget;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      
       if ('touches' in e) {
         return {
-          x: e.touches[0].clientX - rect.left,
-          y: e.touches[0].clientY - rect.top
+          x: (e.touches[0].clientX - rect.left) * scaleX,
+          y: (e.touches[0].clientY - rect.top) * scaleY
         };
       }
       return {
-        x: (e as React.MouseEvent).clientX - rect.left,
-        y: (e as React.MouseEvent).clientY - rect.top
+        x: ((e as React.MouseEvent).clientX - rect.left) * scaleX,
+        y: ((e as React.MouseEvent).clientY - rect.top) * scaleY
       };
     };
 
@@ -1503,9 +1663,36 @@ export default function Index() {
       setSavedDrawings([imageData, ...savedDrawings]);
       
       const earnedNasa = 30;
-      setUserProgress({
-        ...userProgress,
-        nasa: userProgress.nasa + earnedNasa,
+      setUserProgress(prev => {
+        const newProgress = {
+          ...prev,
+          nasa: prev.nasa + earnedNasa,
+        };
+        
+        // Обновляем квест "Художник"
+        const updatedQuests = prev.dailyQuests.map(quest => {
+          if (quest.id === 3 && !quest.completed) {
+            const newProgressValue = quest.progress + 1;
+            const isCompleted = newProgressValue >= quest.target;
+            return {
+              ...quest,
+              progress: newProgressValue,
+              completed: isCompleted
+            };
+          }
+          return quest;
+        });
+        
+        // Если квест выполнен, добавляем награду
+        const artistQuest = updatedQuests.find(q => q.id === 3);
+        if (artistQuest?.completed && prev.dailyQuests.find(q => q.id === 3)?.progress !== artistQuest.progress - 1) {
+          newProgress.nasa += artistQuest.reward;
+        }
+        
+        return {
+          ...newProgress,
+          dailyQuests: updatedQuests
+        };
       });
       
       setShowSaveNotification(true);
@@ -1760,6 +1947,30 @@ export default function Index() {
     </div>
   );
 
+  const renderPenaltyNotification = () => (
+    <div 
+      className={`fixed top-20 right-4 z-50 transition-all duration-500 ${showPenaltyNotification ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}
+    >
+      <Card className="border-4 border-red-400 bg-gradient-to-r from-red-100 to-orange-100 shadow-2xl w-80">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="text-3xl">⚠️</div>
+            <div className="flex-1">
+              <p className="font-bold text-red-800 mb-1">Штраф за пропуск квестов!</p>
+              <p className="text-sm text-red-700">
+                Ты не выполнил квесты вчера. 
+                С твоего счета снято <span className="font-bold">{penaltyAmount} НАС</span>.
+              </p>
+              <p className="text-xs text-red-600 mt-2">
+                💡 Выполняй квесты каждый день, чтобы избежать штрафов!
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   if (activeLesson) {
     const course = courses.find(c => c.id === activeLesson.courseId);
     const questions = getLessonQuestions(activeLesson.courseId, activeLesson.lessonNum);
@@ -1897,9 +2108,43 @@ export default function Index() {
           {renderVoiceAssistant()}
           {renderDailyQuests()}
           {renderEasterEgg()}
+          {renderPenaltyNotification()}
           
           <button
-            onClick={() => setShowVoiceAssistant(!showVoiceAssistant)}
+            onClick={() => {
+              setShowVoiceAssistant(!showVoiceAssistant);
+              
+              // Обновляем квест "Исследователь" при открытии помощника
+              if (!showVoiceAssistant) {
+                setUserProgress(prev => {
+                  const updatedQuests = prev.dailyQuests.map(quest => {
+                    if (quest.id === 4 && !quest.completed) {
+                      const newProgressValue = quest.progress + 1;
+                      const isCompleted = newProgressValue >= quest.target;
+                      return {
+                        ...quest,
+                        progress: newProgressValue,
+                        completed: isCompleted
+                      };
+                    }
+                    return quest;
+                  });
+                  
+                  // Если квест выполнен, добавляем награду
+                  const explorerQuest = updatedQuests.find(q => q.id === 4);
+                  let newNasa = prev.nasa;
+                  if (explorerQuest?.completed && !prev.dailyQuests.find(q => q.id === 4)?.completed) {
+                    newNasa += explorerQuest.reward;
+                  }
+                  
+                  return {
+                    ...prev,
+                    nasa: newNasa,
+                    dailyQuests: updatedQuests
+                  };
+                });
+              }
+            }}
             className="fixed bottom-6 left-6 z-50 w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform"
             title="Голосовой помощник"
           >
